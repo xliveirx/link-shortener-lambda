@@ -4,11 +4,13 @@ import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import joao.core.domain.User;
 import joao.core.port.out.UserRepositoryPortOut;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static joao.config.Constants.EMAIL_INDEX;
 
@@ -46,5 +48,27 @@ public class UserDynamoDbAdapterOut implements UserRepositoryPortOut {
                 .flatMap(userEntityPage -> userEntityPage.items().stream())
                 .map(UserEntity::toDomain)
                 .findFirst();
+    }
+
+    @Override
+    public void deleteById(UUID userId) {
+
+        var key = Key.builder().partitionValue(userId.toString())
+                .build();
+
+        dynamoDbTemplate.delete(key, UserEntity.class);
+    }
+
+    @Override
+    public Optional<User> findById(UUID userId) {
+
+        var key = Key.builder().partitionValue(userId.toString())
+                .build();
+
+        var entity = dynamoDbTemplate.load(key, UserEntity.class);
+
+        return entity == null ?
+                Optional.empty() :
+                Optional.of(entity.toDomain());
     }
 }

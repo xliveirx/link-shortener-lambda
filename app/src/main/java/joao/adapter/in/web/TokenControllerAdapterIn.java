@@ -24,7 +24,7 @@ public class TokenControllerAdapterIn {
 
     @PostMapping("/token")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody @Valid LoginRequest request) {
-        LoginResponse response = authenticatePortIn.execute(request);
+        var response = authenticatePortIn.execute(request);
         return ResponseEntity.ok(response);
     }
 }

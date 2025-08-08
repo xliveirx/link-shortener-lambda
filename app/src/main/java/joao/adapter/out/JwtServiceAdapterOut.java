@@ -4,13 +4,13 @@ package joao.adapter.out;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import joao.core.domain.User;
-import joao.core.exception.LoginException;
+import joao.core.exception.InvalidTokenException;
 import joao.core.port.out.JwtServicePortOut;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.JwtValidationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -29,12 +29,12 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
         try{
             return JWT.create()
                     .withSubject(user.getEmail())
-                    .withIssuer("joao")
+                    .withIssuer("link-shortener")
                     .withExpiresAt(expiresAt(30))
                     .sign(algorithm);
 
         } catch (JWTCreationException ex) {
-            throw new LoginException();
+            throw new InvalidTokenException();
         }
     }
 
@@ -44,13 +44,13 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
         try{
             Algorithm algorithm = Algorithm.HMAC256(secret);
             JWTVerifier verifier = JWT.require(algorithm)
-                    .withIssuer("joao")
+                    .withIssuer("link-shortener")
                     .build();
             decodedJWT = verifier.verify(token);
             return decodedJWT.getSubject();
 
-        } catch(JwtValidationException e) {
-            throw new LoginException();
+        } catch(JWTVerificationException e) {
+            throw new InvalidTokenException();
         }
     }
 

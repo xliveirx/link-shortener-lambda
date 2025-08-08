@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import joao.adapter.out.JwtServiceAdapterOut;
 import joao.core.domain.User;
-import joao.core.exception.LoginException;
+import joao.core.exception.InvalidTokenException;
 import joao.core.port.out.UserRepositoryPortOut;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,10 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = this.recoverToken(request);
 
         if (token != null) {
-            String email = this.jwtServiceAdapterOut.validateToken(token);
-            User user = this.userRepositoryPortOut.findByEmail(email).orElseThrow(LoginException::new);
-            Authentication auth = new UsernamePasswordAuthenticationToken(user, null, null);
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                String email = this.jwtServiceAdapterOut.validateToken(token);
+                User user = this.userRepositoryPortOut.findByEmail(email).orElse(null);
+                if (user != null) {
+                    Authentication auth = new UsernamePasswordAuthenticationToken(user, null, null);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            } catch (InvalidTokenException e) {
+                // Token inválido - não definir autenticação
+            }
         }
         filterChain.doFilter(request, response);
     }
