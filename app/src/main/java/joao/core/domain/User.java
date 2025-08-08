@@ -23,6 +23,15 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public User(UUID userId, String email, String password, String nickname, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.userId = userId;
+        this.email = email;
+        this.password = password;
+        this.nickname = nickname;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
     public UUID getUserId() {
         return userId;
     }

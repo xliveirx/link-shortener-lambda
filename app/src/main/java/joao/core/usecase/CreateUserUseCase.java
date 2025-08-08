@@ -1,6 +1,7 @@
 package joao.core.usecase;
 
 import joao.core.domain.User;
+import joao.core.exception.UserAlreadyExistsException;
 import joao.core.port.in.CreateUserPortIn;
 import joao.core.port.out.UserRepositoryPortOut;
 import org.slf4j.Logger;
@@ -23,8 +24,15 @@ public class CreateUserUseCase implements CreateUserPortIn {
 
     @Override
     public User execute(User user) {
-        user.encodePassword(passwordEncoder);
         logger.info("Creating user {}", user.getEmail());
+
+        var optUser = userRepositoryPortOut.findByEmail(user.getEmail());
+
+        if(optUser.isPresent()) {
+            throw new UserAlreadyExistsException();
+        }
+
+        user.encodePassword(passwordEncoder);
 
         var userCreated = userRepositoryPortOut.save(user);
 

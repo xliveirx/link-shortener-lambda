@@ -1,10 +1,11 @@
 package joao.adapter.in.web;
 
+import jakarta.validation.Valid;
 import joao.adapter.in.web.dto.CreateUserRequest;
 import joao.adapter.in.web.dto.CreateUserResponse;
 import joao.core.port.in.CreateUserPortIn;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import java.net.URI;
 
 @RestController
 @RequestMapping(path = "/users")
+@Validated
 public class UsersControllerAdapterIn {
 
     private final CreateUserPortIn createUserPortIn;
@@ -23,7 +25,7 @@ public class UsersControllerAdapterIn {
     }
 
     @PostMapping
-    public ResponseEntity<CreateUserResponse> createUser(@RequestBody CreateUserRequest req){
+    public ResponseEntity<CreateUserResponse> createUser(@RequestBody @Valid CreateUserRequest req){
 
         var userCreated = createUserPortIn.execute(req.toDomain());
 
