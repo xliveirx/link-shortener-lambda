@@ -72,3 +72,17 @@ aws --endpoint-url="http://localhost:4566" dynamodb create-table \
         ]' \
     --query 'TableDescription.TableName' \
     --output text
+
+# Create Link Analytics Table
+aws --endpoint-url="http://localhost:4566" dynamodb create-table \
+  --region "sa-east-1" \
+  --table-name tb_links_analytics \
+  --attribute-definitions \
+    AttributeName=link_id,AttributeType=S \
+    AttributeName=date,AttributeType=S \
+  --key-schema \
+    AttributeName=link_id,KeyType=HASH \
+    AttributeName=date,KeyType=RANGE \
+  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+  --query 'TableDescription.TableName' \
+  --output text
