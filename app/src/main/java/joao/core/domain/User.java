@@ -32,6 +32,10 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public User(UUID userId) {
+        this.userId = userId;
+    }
+
     public UUID getUserId() {
         return userId;
     }

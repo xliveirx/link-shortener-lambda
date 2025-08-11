@@ -35,3 +35,40 @@ aws --endpoint-url="http://localhost:4566" dynamodb create-table \
     ]" \
   --query 'TableDescription.TableName' \
   --output text
+
+#Create table Tb Users Links
+
+aws --endpoint-url="http://localhost:4566" dynamodb create-table \
+    --region "sa-east-1" \
+    --table-name tb_user_links \
+    --attribute-definitions \
+        AttributeName=link_id,AttributeType=S \
+        AttributeName=user_id,AttributeType=S \
+    --key-schema \
+        AttributeName=link_id,KeyType=HASH \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --global-secondary-indexes \
+        '[
+            {
+                "IndexName": "fk-user-index",
+                "KeySchema": [
+                    {
+                        "AttributeName": "user_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                       "AttributeName": "link_id",
+                       "KeyType": "RANGE"
+                    }
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL"
+                },
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
+                }
+            }
+        ]' \
+    --query 'TableDescription.TableName' \
+    --output text

@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.POST, "/users").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/oauth/token").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/{linkId}").permitAll();
                     req.anyRequest().authenticated();
                 })
                 .csrf(csrf -> csrf.disable())

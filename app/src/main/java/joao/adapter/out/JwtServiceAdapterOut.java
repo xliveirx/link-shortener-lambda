@@ -13,6 +13,7 @@ import joao.core.port.out.JwtServicePortOut;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -55,6 +56,6 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
     }
 
     private Instant expiresAt(int min) {
-        return LocalDateTime.now().plusMinutes(min).toInstant(ZoneOffset.of("-03:00"));
+        return Instant.now().plus(Duration.ofMinutes(min));
     }
 }
