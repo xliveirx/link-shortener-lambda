@@ -60,10 +60,6 @@ public class User {
         return password;
     }
 
-    public String getId() {
-        return userId.toString();
-    }
-
     public void encodePassword(PasswordEncoder passwordEncoder) {
         this.password = passwordEncoder.encode(this.password);
     }

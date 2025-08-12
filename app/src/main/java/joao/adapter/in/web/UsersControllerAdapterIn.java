@@ -40,9 +40,9 @@ public class UsersControllerAdapterIn {
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal User user){
 
-        var userId = user.getId();
+        var userId = user.getUserId();
 
-        deleteUserPortIn.execute(UUID.fromString(userId));
+        deleteUserPortIn.execute(userId);
 
         return ResponseEntity.noContent().build();
     }
