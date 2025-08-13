@@ -4,7 +4,7 @@ import joao.core.domain.Link;
 import joao.core.domain.LinkFilter;
 import joao.core.domain.PaginatedResult;
 
-public interface MyLinksPortIn {
+public interface UserLinksPortIn {
 
     PaginatedResult<Link> execute(
             String uuid,

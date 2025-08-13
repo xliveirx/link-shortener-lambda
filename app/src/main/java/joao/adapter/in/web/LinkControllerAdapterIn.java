@@ -5,7 +5,7 @@ import joao.adapter.in.web.dto.*;
 import joao.core.domain.LinkFilter;
 import joao.core.domain.User;
 import joao.core.port.in.AnalyticsPortIn;
-import joao.core.port.in.MyLinksPortIn;
+import joao.core.port.in.UserLinksPortIn;
 import joao.core.port.in.RedirectPortIn;
 import joao.core.port.in.ShortenLinkPortIn;
 import org.springframework.http.HttpHeaders;
@@ -23,10 +23,10 @@ public class LinkControllerAdapterIn {
 
     private final ShortenLinkPortIn shortenLinkPortIn;
     private final RedirectPortIn redirectPortIn;
-    private final MyLinksPortIn myLinksPortIn;
+    private final UserLinksPortIn myLinksPortIn;
     private final AnalyticsPortIn analyticsPortIn;
 
-    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, MyLinksPortIn myLinksPortIn, AnalyticsPortIn analyticsPortIn) {
+    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, UserLinksPortIn myLinksPortIn, AnalyticsPortIn analyticsPortIn) {
         this.shortenLinkPortIn = shortenLinkPortIn;
         this.redirectPortIn = redirectPortIn;
         this.myLinksPortIn = myLinksPortIn;
