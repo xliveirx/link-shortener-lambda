@@ -7,10 +7,10 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import joao.config.JwtConfig;
 import joao.core.domain.User;
 import joao.core.exception.InvalidTokenException;
 import joao.core.port.out.JwtServicePortOut;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -19,17 +19,20 @@ import java.time.Instant;
 @Service
 public class JwtServiceAdapterOut implements JwtServicePortOut {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final JwtConfig jwtConfig;
+
+    public JwtServiceAdapterOut(JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
+    }
 
     @Override
     public String generateToken(User user) {
-        Algorithm algorithm = Algorithm.HMAC256(secret);
+        Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret());
         try{
             return JWT.create()
                     .withSubject(user.getEmail())
-                    .withIssuer("link-shortener")
-                    .withExpiresAt(expiresAt(30))
+                    .withIssuer(jwtConfig.getIssuer())
+                    .withExpiresAt(expiresAt(jwtConfig.getExpiresIn()))
                     .sign(algorithm);
 
         } catch (JWTCreationException ex) {
@@ -41,9 +44,9 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
     public String validateToken(String token) {
         DecodedJWT decodedJWT;
         try{
-            Algorithm algorithm = Algorithm.HMAC256(secret);
+            Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret());
             JWTVerifier verifier = JWT.require(algorithm)
-                    .withIssuer("link-shortener")
+                    .withIssuer(jwtConfig.getIssuer())
                     .build();
             decodedJWT = verifier.verify(token);
             return decodedJWT.getSubject();
@@ -53,7 +56,7 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
         }
     }
 
-    private Instant expiresAt(int min) {
-        return Instant.now().plus(Duration.ofMinutes(min));
+    private Instant expiresAt(Long milis) {
+        return Instant.now().plus(Duration.ofMillis(milis));
     }
 }

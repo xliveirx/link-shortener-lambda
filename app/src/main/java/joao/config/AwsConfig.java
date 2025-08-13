@@ -19,19 +19,4 @@ public class AwsConfig {
                 .region(Region.SA_EAST_1)
                 .build();
     }
-
-    @Bean
-    public SqsAsyncClient sqsAsyncClient() {
-        return SqsAsyncClient.builder()
-                .endpointOverride(URI.create("http://localstack-main:4566"))
-                .region(Region.SA_EAST_1)
-                .build();
-    }
-
-    @Bean
-    public SqsTemplate sqsTemplate(SqsAsyncClient sqsAsyncClient) {
-        return SqsTemplate.builder()
-                .sqsAsyncClient(sqsAsyncClient)
-                .build();
-    }
 }

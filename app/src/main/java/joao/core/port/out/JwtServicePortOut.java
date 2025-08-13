@@ -7,3 +7,4 @@ public interface JwtServicePortOut {
     String generateToken(User user);
     String validateToken(String token);
 }
+
