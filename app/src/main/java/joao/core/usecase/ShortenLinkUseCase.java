@@ -1,7 +1,5 @@
 package joao.core.usecase;
 
-import joao.adapter.in.web.dto.ShortenLinkRequest;
-import joao.adapter.in.web.dto.ShortenLinkResponse;
 import joao.core.domain.Link;
 import joao.core.exception.LinkAlreadyExistsException;
 import joao.core.port.in.ShortenLinkPortIn;
