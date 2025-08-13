@@ -3,6 +3,7 @@ package joao.core.domain;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static joao.config.Constants.*;
 
@@ -83,5 +84,9 @@ public class Link {
         }
 
         return builder.toUriString();
+    }
+
+    public boolean isFromUser(UUID userId) {
+        return this.user.getUserId().equals(userId);
     }
 }

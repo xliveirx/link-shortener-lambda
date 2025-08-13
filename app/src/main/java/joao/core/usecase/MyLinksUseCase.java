@@ -1,13 +1,11 @@
 package joao.core.usecase;
 
 import joao.core.domain.Link;
+import joao.core.domain.LinkFilter;
 import joao.core.domain.PaginatedResult;
 import joao.core.port.in.MyLinksPortIn;
 import joao.core.port.out.LinkRepositoryPortOut;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 public class MyLinksUseCase implements MyLinksPortIn {
@@ -19,9 +17,18 @@ public class MyLinksUseCase implements MyLinksPortIn {
     }
 
     @Override
-    public PaginatedResult<Link> execute(String userId, String nextToken, int limit) {
+    public PaginatedResult<Link> execute(String userId,
+                                         String nextToken,
+                                         int limit,
+                                         LinkFilter filters) {
 
-        return linkRepositoryPortOut.findAllByUserId(userId, nextToken, limit);
+        filters.validate();
 
+        return linkRepositoryPortOut.findAllByUserId(
+                userId,
+                nextToken,
+                limit,
+                filters
+        );
     }
 }

@@ -2,6 +2,7 @@ package joao.adapter.out.persistence;
 
 import joao.config.TableName;
 import joao.core.domain.Link;
+import joao.core.domain.LinkAnalytics;
 import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbAtomicCounter;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
@@ -10,6 +11,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @DynamoDbBean
 @TableName(name = "tb_links_analytics")
@@ -69,5 +72,14 @@ public class LinkAnalyticsEntity {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LinkAnalytics toDomain() {
+        return new LinkAnalytics(
+                linkId,
+                date,
+                Long.valueOf(clicks),
+                LocalDateTime.ofInstant(updatedAt, ZoneId.systemDefault())
+        );
     }
 }
