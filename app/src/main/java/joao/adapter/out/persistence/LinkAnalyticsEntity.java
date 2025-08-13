@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+import static joao.adapter.out.persistence.DynamoAttributeConstants.*;
+
 @DynamoDbBean
 @TableName(name = "tb_links_analytics")
 public class LinkAnalyticsEntity {
@@ -36,7 +38,7 @@ public class LinkAnalyticsEntity {
     }
 
     @DynamoDbPartitionKey
-    @DynamoDbAttribute("link_id")
+    @DynamoDbAttribute(ANALYTICS_LINK_ID)
     public String getLinkId() {
         return linkId;
     }
@@ -46,7 +48,7 @@ public class LinkAnalyticsEntity {
     }
 
     @DynamoDbSortKey
-    @DynamoDbAttribute("date")
+    @DynamoDbAttribute(ANALYTICS_DATE)
     public LocalDate getDate() {
         return date;
     }
@@ -56,7 +58,7 @@ public class LinkAnalyticsEntity {
     }
 
     @DynamoDbAtomicCounter(startValue = 1)
-    @DynamoDbAttribute("clicks")
+    @DynamoDbAttribute(ANALYTICS_CLICKS)
     public Integer getClicks() {
         return clicks;
     }
@@ -65,7 +67,7 @@ public class LinkAnalyticsEntity {
         this.clicks = clicks;
     }
 
-    @DynamoDbAttribute("updated_at")
+    @DynamoDbAttribute(ANALYTICS_UPDATED_AT)
     public Instant getUpdatedAt() {
         return updatedAt;
     }

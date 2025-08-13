@@ -10,6 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecon
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static joao.adapter.out.persistence.DynamoAttributeConstants.*;
 import static joao.config.Constants.EMAIL_INDEX;
 
 @DynamoDbBean
@@ -38,7 +39,7 @@ public class UserEntity {
     }
 
     @DynamoDbPartitionKey
-    @DynamoDbAttribute("user_id")
+    @DynamoDbAttribute(USER_ID)
     public UUID getUserId() {
         return userId;
     }
@@ -47,7 +48,7 @@ public class UserEntity {
         this.userId = userId;
     }
 
-    @DynamoDbAttribute("email")
+    @DynamoDbAttribute(USER_EMAIL)
     @DynamoDbSecondaryPartitionKey(indexNames = EMAIL_INDEX)
     public String getEmail() {
         return email;
@@ -57,27 +58,25 @@ public class UserEntity {
         this.email = email;
     }
 
-    @DynamoDbAttribute("password")
+    @DynamoDbAttribute(USER_PASSWORD)
     public String getPassword() {
         return password;
     }
 
-    @DynamoDbAttribute("password")
     public void setPassword(String password) {
         this.password = password;
     }
 
-    @DynamoDbAttribute("nickname")
+    @DynamoDbAttribute(USER_NICKNAME)
     public String getNickname() {
         return nickname;
     }
 
-    @DynamoDbAttribute("nickname")
     public void setNickname(String nickname) {
         this.nickname = nickname;
     }
 
-    @DynamoDbAttribute("created_at")
+    @DynamoDbAttribute(USER_CREATED_AT)
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -86,7 +85,7 @@ public class UserEntity {
         this.createdAt = createdAt;
     }
 
-    @DynamoDbAttribute("updated_at")
+    @DynamoDbAttribute(USER_UPDATED_AT)
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }

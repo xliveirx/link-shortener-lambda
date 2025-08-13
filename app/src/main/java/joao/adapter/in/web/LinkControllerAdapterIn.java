@@ -1,5 +1,7 @@
 package joao.adapter.in.web;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import joao.adapter.in.web.dto.*;
 import joao.core.domain.LinkFilter;
@@ -25,25 +27,30 @@ public class LinkControllerAdapterIn {
     private final RedirectPortIn redirectPortIn;
     private final UserLinksPortIn myLinksPortIn;
     private final AnalyticsPortIn analyticsPortIn;
+    private final ServletRequest servletRequest;
 
-    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, UserLinksPortIn myLinksPortIn, AnalyticsPortIn analyticsPortIn) {
+    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, UserLinksPortIn myLinksPortIn, AnalyticsPortIn analyticsPortIn, ServletRequest servletRequest) {
         this.shortenLinkPortIn = shortenLinkPortIn;
         this.redirectPortIn = redirectPortIn;
         this.myLinksPortIn = myLinksPortIn;
         this.analyticsPortIn = analyticsPortIn;
+        this.servletRequest = servletRequest;
     }
 
     @PostMapping("/links")
     public ResponseEntity<ShortenLinkResponse> shortenLink(@RequestBody @Valid ShortenLinkRequest req,
+                                                           HttpServletRequest servletRequest,
                                                            @AuthenticationPrincipal User user) {
 
         var userId = user.getUserId();
 
-        var res = shortenLinkPortIn.execute(req.toDomain(userId));
+        var linkId = shortenLinkPortIn.execute(req.toDomain(userId));
 
-        var uri = URI.create("/");
+        var redirectUrl = servletRequest.getRequestURL().toString().replace("links",linkId);
 
-        return ResponseEntity.created(uri).body(res);
+        var uri = URI.create(redirectUrl);
+
+        return ResponseEntity.created(uri).body(new ShortenLinkResponse(redirectUrl));
     }
 
     @GetMapping("/r/{linkId}")

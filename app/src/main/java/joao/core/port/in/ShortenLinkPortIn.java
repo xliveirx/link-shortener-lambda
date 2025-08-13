@@ -4,5 +4,5 @@ import joao.adapter.in.web.dto.ShortenLinkResponse;
 import joao.core.domain.Link;
 
 public interface ShortenLinkPortIn {
-    ShortenLinkResponse execute(Link req);
+    String execute(Link req);
 }

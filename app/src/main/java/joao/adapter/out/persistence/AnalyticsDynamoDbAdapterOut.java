@@ -17,6 +17,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
+import static joao.adapter.out.persistence.DynamoAttributeConstants.*;
+
 @Component
 public class AnalyticsDynamoDbAdapterOut implements AnalyticsRepositoryPortOut {
 
@@ -51,35 +54,12 @@ public class AnalyticsDynamoDbAdapterOut implements AnalyticsRepositoryPortOut {
         }
     }
 
-    @Override
-    public List<LinkAnalytics> findAll(String linkId, LocalDate startDate, LocalDate endDate) {
-
-        var conditional = QueryConditional.sortBetween(
-                Key.builder()
-                        .partitionValue(linkId)
-                        .sortValue(startDate.toString())
-                        .build(),
-                Key.builder()
-                        .partitionValue(linkId)
-                        .sortValue(endDate.toString())
-                .build()
-        );
-
-       return dynamoDbTemplate.query(QueryEnhancedRequest.builder()
-                .queryConditional(conditional)
-                .build(), LinkAnalyticsEntity.class)
-                .items()
-                .stream()
-                .map(LinkAnalyticsEntity::toDomain)
-                .toList();
-    }
-
     private void updateAnalytics(LinkAnalyticsEntity entity,
                                  LocalDate date) {
 
         Map<String, AttributeValue> key = Map.of(
-                "link_id", AttributeValue.fromS(entity.getLinkId()),
-                "date", AttributeValue.fromS(date.toString())
+                ANALYTICS_LINK_ID, AttributeValue.fromS(entity.getLinkId()),
+                ANALYTICS_DATE, AttributeValue.fromS(date.toString())
         );
 
         Map<String, AttributeValue> expressionValues = Map.of(
@@ -91,10 +71,35 @@ public class AnalyticsDynamoDbAdapterOut implements AnalyticsRepositoryPortOut {
         UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName("tb_links_analytics")
                 .key(key)
-                .updateExpression("SET clicks = if_not_exists(clicks, :zero) + :inc, updated_at = :now")
+                .updateExpression(format("SET %s = if_not_exists(%s, :zero) + :inc, updated_at = :now", ANALYTICS_CLICKS, ANALYTICS_CLICKS))
                 .expressionAttributeValues(expressionValues)
                 .build();
 
         dynamoDbClient.updateItem(request);
     }
+
+
+    @Override
+    public List<LinkAnalytics> findAll(String linkId, LocalDate startDate, LocalDate endDate) {
+
+        var conditional = QueryConditional.sortBetween(
+                Key.builder()
+                        .partitionValue(linkId)
+                        .sortValue(startDate.toString())
+                        .build(),
+                Key.builder()
+                        .partitionValue(linkId)
+                        .sortValue(endDate.toString())
+                        .build()
+        );
+
+        return dynamoDbTemplate.query(QueryEnhancedRequest.builder()
+                        .queryConditional(conditional)
+                        .build(), LinkAnalyticsEntity.class)
+                .items()
+                .stream()
+                .map(LinkAnalyticsEntity::toDomain)
+                .toList();
+    }
+
 }

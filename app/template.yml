@@ -4,6 +4,9 @@ Description: AWS Serverless Spring Boot 2 API - my.service::my-service
 Globals:
   Api:
     EndpointConfiguration: REGIONAL
+  Function:
+    Architectures:
+      - arm64
 
 Resources:
   MyServiceFunction:
