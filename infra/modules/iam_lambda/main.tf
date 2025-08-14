@@ -24,11 +24,6 @@ resource "aws_iam_policy" "lambda" {
         Effect   = "Allow",
         Resource = var.dynamodb_arn
       },
-      {
-        Action   = ["secretsmanager:GetSecretValue"],
-        Effect   = "Allow",
-        Resource = [var.secret_arn]
-      }
     ]
   })
 }
