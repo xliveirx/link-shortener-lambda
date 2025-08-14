@@ -10,7 +10,7 @@ resource "aws_lambda_function" "this" {
 
   publish = true
   snap_start {
-    apply_on = "PublishedVersion"
+    apply_on = "PublishedVersions"
   }
 
   environment {
