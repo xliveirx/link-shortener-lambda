@@ -1,14 +1,16 @@
 resource "aws_iam_role" "lambda" {
   name = "${var.name_prefix}-lambda-role"
-  assume_role_policy = jsondecode({
+  assume_role_policy = jsonencode({
     Version = "2012-10-17",
-    Statement= [{
+    Statement = [{
       Action = "sts:AssumeRole",
       Effect = "Allow",
-      Princiapl = { Service = "lambda.amazonaws.com"}
+      Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
 }
+
+
 resource "aws_iam_policy" "lambda" {
   name   = "${var.name_prefix}-lambda-policy"
   policy = jsonencode({
@@ -23,7 +25,7 @@ resource "aws_iam_policy" "lambda" {
         Action   = ["dynamodb:*"],
         Effect   = "Allow",
         Resource = var.dynamodb_arn
-      },
+      }
     ]
   })
 }
