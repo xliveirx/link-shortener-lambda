@@ -1,0 +1,154 @@
+name: "CI/CD Workflow"
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      aws-assume-role-arn:
+        type: string
+        required: true
+      aws-region:
+        type: string
+        required: true
+      aws-statefile-s3-bucket:
+        type: string
+        required: true
+      aws-lock-dynamodb-table:
+        type: string
+        required: true
+      artifact-bucket:
+        type: string
+        required: true
+      ssm-param-artifact-key:
+        type: string
+        required: true
+
+jobs:
+  cicd:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Setup terraform
+          uses: hashicorp/setup-terraform@v3
+          with:
+            terraform_version: 1.8.3
+
+        - name: Setup AWS Credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            role-to-assume: ${{inputs.aws-assume-role-arn}}
+            role-session-name: GitHub_to_AWS_via_FederatedOIDC
+            aws-region: ${{inputs.aws-region}}
+
+        - name: Setup Java
+          if: ${{inputs.environment == 'dev'}}
+          uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: 21
+
+        - name: Cache Maven
+          if: ${{inputs.environment == 'dev'}}
+          uses: actions/cache@v4
+          with:
+            path: ~/.m2/repository
+            key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml')}}
+            restore-keys: ${{ runner.os }}-maven-
+
+        - name: Build & Test (Maven)
+          if: ${{inputs.environment == 'dev'}}
+          working-directory: app
+          run: |
+            mvn -B -ntp clean verify
+            JAVA_PATH=$(ls target/*.zip | head -n1)
+            echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          id: build
+
+        - name: Upload JAR to S3 & store key in SSM (dev)
+          if: ${{inputs.environment == 'dev'}}
+          working-directory: app
+          id: publish
+          run: |
+            KEY="${{ github.event.repository.name }}/artifacts/${GITHUB_SHA}/app.zip"
+            
+            aws s3 cp "${{steps.build.outputs.jar_path}}" "s3://${{inputs.artifact-bucket}}/${KEY}"
+            
+            aws ssm put-parameter \ 
+              --name "${{inputs.ssm-param-artifact-key}}/latest_jar_key" \
+              --value "$KEY" \
+              --type String \ 
+              --overwrite
+            
+            echo "s3_key=$KEY" >> $GITUB_OUTPUT
+
+        - name: Read JAR key from SSM (PROD)
+          if: ${{ inputs.environment == 'prod' }}
+          id: readKey
+          run: | 
+            KEY=$(aws ssm get-parameter --name "${{ inputs.ssm-param-artifact-key }}/latest_jar_key" --query "Parameter.Value
+            
+            echo "Promoting Key to production => $KEY"
+            
+            aws ssm put-parameter \ 
+              --name "${{ inputs.ssm-param-artifact-key }}/stable_jar_key" \
+              --value "$KEY" \ 
+              --type String \ 
+              --overwrite
+            
+            echo "s3_key=$KEY" >> $GITHUB_OUTPUT
+
+        - name: Export JAR vars for Terraform
+          run: |
+            echo "TF_VAR_lambda_s3_bucket=${{ inputs.artifact-bucket }}" >> $GITHUB_ENV
+            echo "TF_VAR_lambda_s3_key=${{ steps.publish.outputs.s3_key }} >> $GITHUB_ENV
+
+        - name: Read destroy configuration
+          id: read-destroy-config
+          run: |
+              DESTROY="$(jq -r '.${{ inputs.environment }}' ./infra/destroy_config.json)"
+              echo "destroy=$(echo $DESTROY)" >> $GITHUB_OUTPUT
+
+        - name: Terraform Init
+          run: |
+              cd infra && terraform init \
+              -backend-config="bucket=${{ inputs.aws-statefile-s3-bucket }}" \
+              -backend-config="key=${{ github.event.repository.name }}" \
+              -backend-config="region=${{ inputs.aws-region }}" \
+              -backend-config="dynamodb_table=${{ inputs.aws-lock-dynamodb-table }}"
+
+        - name: Terraform Validate
+          run: terraform validate
+
+        - name: Terraform Destroy
+          if: steps.read-destroy-config.outputs.destroy == 'true'
+          id: terraform-destroy
+          run: | 
+                cd infra &&
+                terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
+                terraform destroy -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -auto-approve
+
+        - name: Terraform Plan
+          if: steps.read-destroy-config.outputs.destroy != 'true'
+          id: terraform-plan
+          run: |
+                  cd infra &&
+                  terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
+                  terraform plan -var-file="./envs/${{ inputs.environment }}/terraform.tfvars" -out="${{ inputs.environment }}.plan"
+
+        - name: Terraform Apply
+          if: steps.read-destroy-config.outputs.destroy != 'true'
+          id: terraform-apply
+          run: |
+                  cd infra &&
+                  terraform workspace select ${{ inputs.environment }} || terraform workspace new ${{ inputs.environment }} &&
+                  terraform apply "${{ inputs.environment }}.plan"
+
+
+

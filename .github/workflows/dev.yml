@@ -1,0 +1,22 @@
+name: "DEV DEPLOY"
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  cicd:
+    uses: ./.github/workflows/cicd.yml
+    with:
+      environment: dev
+      aws-assume-role-arn: "arn:aws:iam::050925927131:role/GithubActions-LinkShortener-Role"
+      aws-region: "us-east-1"
+      aws-statefile-s3-bucket: "050925927131-terraform-statefile"
+      aws-lock-dynamodb-table: "050925927131-terraform-lock"
+      artifact-bucket: "code-050925927131-artifacts"
+      ssm-param-artifact-key: "/apps/link_shortener_saas"
