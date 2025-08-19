@@ -5,3 +5,7 @@ variable "name_prefix" {
 variable "dynamodb_arn" {
   type = string
 }
+
+variable "secrets_arn" {
+  type = string
+}
