@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  cicd:
+  terraform:
     uses: ./.github/workflows/cicd.yml
     with:
       environment: prod
