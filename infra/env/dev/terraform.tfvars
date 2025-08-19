@@ -7,5 +7,4 @@ lambda_handler = "joao.StreamLambdaHandler::handleRequest"
 
 env_vars = {
   "SECRET_NAME" = "dev-link-shortener-saas-jwt-secret"
-  "AWS_REGION" = "us-east-1"
 }
