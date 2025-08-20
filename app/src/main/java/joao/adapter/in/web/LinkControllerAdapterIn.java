@@ -46,7 +46,7 @@ public class LinkControllerAdapterIn {
 
         var linkId = shortenLinkPortIn.execute(req.toDomain(userId));
 
-        var redirectUrl = servletRequest.getRequestURL().toString().replace("links",linkId);
+        var redirectUrl = servletRequest.getRequestURL().toString().replace("links","r/" + linkId);
 
         var uri = URI.create(redirectUrl);
 
