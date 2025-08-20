@@ -4,6 +4,7 @@ import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import joao.core.domain.Link;
 import joao.core.domain.LinkAnalytics;
 import joao.core.port.out.AnalyticsRepositoryPortOut;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
@@ -22,6 +23,9 @@ import static joao.adapter.out.persistence.DynamoAttributeConstants.*;
 
 @Component
 public class AnalyticsDynamoDbAdapterOut implements AnalyticsRepositoryPortOut {
+
+    @Value("${ENV}")
+    private String env;
 
     private final DynamoDbTemplate dynamoDbTemplate;
     private final DynamoDbClient dynamoDbClient;
@@ -69,7 +73,7 @@ public class AnalyticsDynamoDbAdapterOut implements AnalyticsRepositoryPortOut {
         );
 
         UpdateItemRequest request = UpdateItemRequest.builder()
-                .tableName("tb_links_analytics")
+                .tableName(env + "_tb_links_analytics")
                 .key(key)
                 .updateExpression(format("SET %s = if_not_exists(%s, :zero) + :inc, updated_at = :now", ANALYTICS_CLICKS, ANALYTICS_CLICKS))
                 .expressionAttributeValues(expressionValues)
