@@ -144,10 +144,13 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
                 .map(LinkEntity::toDomain)
                 .collect(Collectors.toList());
 
+        // Only return a token if there are items in the current page AND there are more items to fetch
+        boolean hasMoreItems = page.lastEvaluatedKey() != null && !links.isEmpty();
+
         return new PaginatedResult<>(
                 links,
-                page.lastEvaluatedKey() != null ? dynamoTokenHelper.encodeStartToken(page.lastEvaluatedKey()) : null,
-                page.lastEvaluatedKey() != null
+                hasMoreItems ? dynamoTokenHelper.encodeStartToken(page.lastEvaluatedKey()) : null,
+                hasMoreItems
         );
     }
 
