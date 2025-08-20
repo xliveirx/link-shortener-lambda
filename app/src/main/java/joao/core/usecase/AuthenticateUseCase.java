@@ -3,7 +3,6 @@ package joao.core.usecase;
 import joao.adapter.in.web.dto.LoginRequest;
 import joao.adapter.in.web.dto.LoginResponse;
 import joao.config.AwsJwtSecretConfig;
-import joao.config.JwtConfig;
 import joao.core.exception.LoginException;
 import joao.core.port.in.AuthenticatePortIn;
 import joao.core.port.out.JwtServicePortOut;

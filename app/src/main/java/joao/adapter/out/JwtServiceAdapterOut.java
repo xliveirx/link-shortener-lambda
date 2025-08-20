@@ -8,7 +8,6 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import joao.config.AwsJwtSecretConfig;
-import joao.config.JwtConfig;
 import joao.core.domain.User;
 import joao.core.exception.InvalidTokenException;
 import joao.core.port.out.JwtServicePortOut;

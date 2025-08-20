@@ -24,7 +24,7 @@ resource "aws_iam_policy" "lambda" {
       {
         Action   = ["dynamodb:*"],
         Effect   = "Allow",
-        Resource = var.dynamodb_arn
+        Resource = concat(var.dynamodb_arn, [for arn in var.dynamodb_arn : "${arn}/index/*"])
       },
       {
         Effect   = "Allow",

@@ -6,7 +6,9 @@ module "iam_lambda" {
   source = "./modules/iam_lambda"
   name_prefix = local.name_prefix
   dynamodb_arn = [
-    module.dynamodb_tb_users.table_arn
+    module.dynamodb_tb_users.table_arn,
+    module.dynamodb_links_analytics.table_arn,
+    module.dynamodb_user_links.table_arn
   ]
   secrets_arn = module.secrets_manager.secret_arn
 }
