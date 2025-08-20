@@ -116,8 +116,12 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
         }
 
         if(nextToken != null && !nextToken.isEmpty()) {
-            var map = dynamoTokenHelper.decodeStartToken(nextToken);
-            requestBuilder.exclusiveStartKey(map);
+            try {
+                var map = dynamoTokenHelper.decodeStartToken(nextToken);
+                requestBuilder.exclusiveStartKey(map);
+            } catch (RuntimeException e) {
+                System.err.println("Error processing pagination token: " + e.getMessage());
+            }
         }
         return requestBuilder.build();
     }

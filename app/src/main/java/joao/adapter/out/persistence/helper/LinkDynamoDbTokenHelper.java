@@ -36,7 +36,16 @@ public class LinkDynamoDbTokenHelper {
 
     public Map<String, AttributeValue> decodeStartToken(String token){
         try {
-            byte[] decoded = Base64.getDecoder().decode(token);
+            if (token == null || token.isEmpty()) {
+                throw new IllegalArgumentException("Token cannot be null or empty");
+            }
+
+            byte[] decoded;
+            try {
+                decoded = Base64.getDecoder().decode(token);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid Base64 token format: " + e.getMessage(), e);
+            }
 
             String json = new String(decoded, StandardCharsets.UTF_8);
 
@@ -48,6 +57,7 @@ public class LinkDynamoDbTokenHelper {
             );
 
         } catch (Exception ex) {
+            System.err.println("Error decoding token: " + token + ", Error: " + ex.getMessage());
             throw new RuntimeException("Failed to decode start token", ex);
         }
     }
