@@ -7,7 +7,7 @@ echo "Done waiting."
 
 # Create Table Users
 aws --endpoint-url="http://localhost:4566" dynamodb create-table \
-  --region "sa-east-1" \
+  --region "us-east-1" \
   --table-name "tb_users" \
   --attribute-definitions \
     AttributeName=user_id,AttributeType=S \
@@ -39,7 +39,7 @@ aws --endpoint-url="http://localhost:4566" dynamodb create-table \
 #Create table Tb Users Links
 
 aws --endpoint-url="http://localhost:4566" dynamodb create-table \
-    --region "sa-east-1" \
+    --region "us-east-1" \
     --table-name tb_user_links \
     --attribute-definitions \
         AttributeName=link_id,AttributeType=S \
@@ -75,7 +75,7 @@ aws --endpoint-url="http://localhost:4566" dynamodb create-table \
 
 # Create Link Analytics Table
 aws --endpoint-url="http://localhost:4566" dynamodb create-table \
-  --region "sa-east-1" \
+  --region "us-east-1" \
   --table-name tb_links_analytics \
   --attribute-definitions \
     AttributeName=link_id,AttributeType=S \
@@ -86,3 +86,10 @@ aws --endpoint-url="http://localhost:4566" dynamodb create-table \
   --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
   --query 'TableDescription.TableName' \
   --output text
+
+# Create Secret Manager
+aws --endpoint-url="http://localhost:4566" secretsmanager create-secret \
+  --name link-shortener-saas-jwt-secret \
+  --description "Local secret for my app" \
+  --secret-string file://secret.json
+
