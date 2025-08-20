@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 import static java.lang.String.format;
 import static joao.adapter.out.persistence.DynamoAttributeConstants.LINK_ACTIVE;
@@ -80,9 +81,11 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
     }
 
     private static QueryConditional buildPartitionKeyUserId(String userId) {
+        // Convert the userId String to a UUID to ensure it's in the correct format
+        UUID userUUID = UUID.fromString(userId);
         return QueryConditional.keyEqualTo(
                 Key.builder()
-                        .partitionValue(userId.toString())
+                        .partitionValue(userUUID.toString())
                         .build()
         );
     }

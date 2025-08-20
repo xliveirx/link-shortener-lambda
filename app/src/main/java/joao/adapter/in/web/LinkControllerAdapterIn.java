@@ -80,8 +80,7 @@ public class LinkControllerAdapterIn {
         return ResponseEntity.ok(
                 new ApiResponse<>(
                         response.items().stream().map(LinkResponse::fromDomain).toList(),
-                        response.nextToken()
-
+                        response.hasMore() ? response.nextToken() : null
                 )
         );
     }
