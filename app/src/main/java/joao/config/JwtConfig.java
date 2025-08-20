@@ -3,16 +3,16 @@ package joao.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration
 public class JwtConfig {
 
-    @Value("jwt.issuer")
+//    @Value("jwt.issuer")
     private String issuer;
 
-    @Value("${jwt.secret}")
+//    @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expires.in}")
+//    @Value("${jwt.expires.in}")
     private Long expiresIn;
 
     public String getIssuer() {

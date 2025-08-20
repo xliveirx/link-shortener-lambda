@@ -7,6 +7,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import joao.config.AwsJwtSecretConfig;
 import joao.config.JwtConfig;
 import joao.core.domain.User;
 import joao.core.exception.InvalidTokenException;
@@ -19,20 +20,20 @@ import java.time.Instant;
 @Service
 public class JwtServiceAdapterOut implements JwtServicePortOut {
 
-    private final JwtConfig jwtConfig;
+    private final AwsJwtSecretConfig awsJwtSecretConfig;
 
-    public JwtServiceAdapterOut(JwtConfig jwtConfig) {
-        this.jwtConfig = jwtConfig;
+    public JwtServiceAdapterOut(AwsJwtSecretConfig awsJwtSecretConfig) {
+        this.awsJwtSecretConfig = awsJwtSecretConfig;
     }
 
     @Override
     public String generateToken(User user) {
-        Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret());
+        Algorithm algorithm = Algorithm.HMAC256(awsJwtSecretConfig.jwtSecret());
         try{
             return JWT.create()
                     .withSubject(user.getEmail())
-                    .withIssuer(jwtConfig.getIssuer())
-                    .withExpiresAt(expiresAt(jwtConfig.getExpiresIn()))
+                    .withIssuer(awsJwtSecretConfig.jwtIssuer())
+                    .withExpiresAt(expiresAt(awsJwtSecretConfig.jwtExpiresIn()))
                     .sign(algorithm);
 
         } catch (JWTCreationException ex) {
@@ -44,9 +45,9 @@ public class JwtServiceAdapterOut implements JwtServicePortOut {
     public String validateToken(String token) {
         DecodedJWT decodedJWT;
         try{
-            Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret());
+            Algorithm algorithm = Algorithm.HMAC256(awsJwtSecretConfig.jwtSecret());
             JWTVerifier verifier = JWT.require(algorithm)
-                    .withIssuer(jwtConfig.getIssuer())
+                    .withIssuer(awsJwtSecretConfig.jwtIssuer())
                     .build();
             decodedJWT = verifier.verify(token);
             return decodedJWT.getSubject();
