@@ -5,7 +5,9 @@ locals {
 module "iam_lambda" {
   source = "./modules/iam_lambda"
   name_prefix = local.name_prefix
-  dynamodb_arn = module.dynamodb.table_arn
+  dynamodb_arn = [
+    module.dynamodb_tb_users.table_arn
+  ]
   secrets_arn = module.secrets_manager.secret_arn
 }
 
@@ -37,7 +39,7 @@ module "api" {
   timeout_ms = 29000
 }
 
-module "dynamodb" {
+module "dynamodb_tb_users" {
   source = "./modules/dynamodb"
   table_name = "${var.env}_tb_users"
   billing_mode = "PROVISIONED"
@@ -61,9 +63,9 @@ module "dynamodb" {
       hash_key = "email"
       range_key = null
       projection_type = "INCLUDE"
-      non_key_attribute = ["user_id", "password"]
+      non_key_attributes = ["user_id", "password"]
       read_capacity = 1
-      write_capcity = 1
+      write_capacity = 1
     }
   ]
 }
