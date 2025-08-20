@@ -81,7 +81,6 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
     }
 
     private static QueryConditional buildPartitionKeyUserId(String userId) {
-        // Convert the userId String to a UUID to ensure it's in the correct format
         UUID userUUID = UUID.fromString(userId);
         return QueryConditional.keyEqualTo(
                 Key.builder()
@@ -118,7 +117,12 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
         if(nextToken != null && !nextToken.isEmpty()) {
             try {
                 var map = dynamoTokenHelper.decodeStartToken(nextToken);
-                requestBuilder.exclusiveStartKey(map);
+                if (map != null && !map.isEmpty()) {
+                    requestBuilder.exclusiveStartKey(map);
+                    System.out.println("Using pagination token: " + nextToken);
+                } else {
+                    System.err.println("Decoded token is null or empty: " + nextToken);
+                }
             } catch (RuntimeException e) {
                 System.err.println("Error processing pagination token: " + e.getMessage());
             }
@@ -144,12 +148,21 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
                 .map(LinkEntity::toDomain)
                 .collect(Collectors.toList());
 
-        // Only return a token if there are items in the current page AND there are more items to fetch
+
         boolean hasMoreItems = page.lastEvaluatedKey() != null && !links.isEmpty();
+
+        String nextToken = null;
+        if (hasMoreItems) {
+            nextToken = dynamoTokenHelper.encodeStartToken(page.lastEvaluatedKey());
+            if (nextToken == null) {
+                hasMoreItems = false;
+                System.err.println("Token encoding failed, setting hasMoreItems to false");
+            }
+        }
 
         return new PaginatedResult<>(
                 links,
-                hasMoreItems ? dynamoTokenHelper.encodeStartToken(page.lastEvaluatedKey()) : null,
+                nextToken,
                 hasMoreItems
         );
     }

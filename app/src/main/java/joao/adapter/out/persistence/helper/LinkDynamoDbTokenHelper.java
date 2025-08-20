@@ -22,14 +22,32 @@ public class LinkDynamoDbTokenHelper {
 
     public String encodeStartToken(Map<String, AttributeValue> key){
         try {
+            if (key == null || key.isEmpty() || !key.containsKey(LINK_ID) || !key.containsKey(LINK_USER_ID)) {
+                System.err.println("Invalid key for token encoding: " + key);
+                return null;
+            }
 
-            var dto = new TokenDto(key.get(LINK_ID).s(), key.get(LINK_USER_ID).s());
+            AttributeValue linkIdValue = key.get(LINK_ID);
+            AttributeValue userIdValue = key.get(LINK_USER_ID);
 
+            if (linkIdValue == null || userIdValue == null || 
+                linkIdValue.s() == null || userIdValue.s() == null ||
+                linkIdValue.s().isEmpty() || userIdValue.s().isEmpty()) {
+                System.err.println("Invalid values in key for token encoding: linkId=" + 
+                                  (linkIdValue != null ? linkIdValue.s() : "null") + 
+                                  ", userId=" + (userIdValue != null ? userIdValue.s() : "null"));
+                return null;
+            }
+
+            var dto = new TokenDto(linkIdValue.s(), userIdValue.s());
             String json = mapper.writeValueAsString(dto);
 
-            return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+            String token = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+            System.out.println("Encoded token: " + token + " for linkId=" + linkIdValue.s() + ", userId=" + userIdValue.s());
 
+            return token;
         } catch (Exception ex) {
+            System.err.println("Error encoding token: " + ex.getMessage());
             throw new RuntimeException("Failed to encode start token", ex);
         }
     }
