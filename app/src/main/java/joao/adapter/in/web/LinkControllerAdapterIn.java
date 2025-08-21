@@ -25,14 +25,14 @@ public class LinkControllerAdapterIn {
 
     private final ShortenLinkPortIn shortenLinkPortIn;
     private final RedirectPortIn redirectPortIn;
-    private final UserLinksPortIn myLinksPortIn;
+    private final UserLinksPortIn userLinksPortIn;
     private final AnalyticsPortIn analyticsPortIn;
     private final ServletRequest servletRequest;
 
-    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, UserLinksPortIn myLinksPortIn, AnalyticsPortIn analyticsPortIn, ServletRequest servletRequest) {
+    public LinkControllerAdapterIn(ShortenLinkPortIn shortenLinkPortIn, RedirectPortIn redirectPortIn, UserLinksPortIn userLinksPortIn, AnalyticsPortIn analyticsPortIn, ServletRequest servletRequest) {
         this.shortenLinkPortIn = shortenLinkPortIn;
         this.redirectPortIn = redirectPortIn;
-        this.myLinksPortIn = myLinksPortIn;
+        this.userLinksPortIn = userLinksPortIn;
         this.analyticsPortIn = analyticsPortIn;
         this.servletRequest = servletRequest;
     }
@@ -65,22 +65,22 @@ public class LinkControllerAdapterIn {
         return ResponseEntity.status(HttpStatus.FOUND).headers(headers).build();
     }
 
-    @GetMapping("/links")
+    @GetMapping(value = "/links")
     public ResponseEntity<ApiResponse<LinkResponse>> userLinks(@RequestParam(name = "nextToken", defaultValue = "") String nextToken,
                                                                @RequestParam(name = "limit", defaultValue = "3") Integer limit,
                                                                @RequestParam(name = "active", required = false) Boolean active,
                                                                @RequestParam(name = "startCreatedAt", required = false) LocalDate startCreatedAt,
                                                                @RequestParam(name = "endCreatedAt", required = false) LocalDate endCreatedAt,
-                                                               @AuthenticationPrincipal User user) {
+                                                               @AuthenticationPrincipal User logged) {
 
-        var userId = String.valueOf(user.getUserId());
+        var userId = String.valueOf(logged.getUserId());
 
-        var response = myLinksPortIn.execute(userId, nextToken, limit, new LinkFilter(active, startCreatedAt, endCreatedAt));
+        var body = userLinksPortIn.execute(userId, nextToken, limit, new LinkFilter(active, startCreatedAt, endCreatedAt));
 
         return ResponseEntity.ok(
                 new ApiResponse<>(
-                        response.items().stream().map(LinkResponse::fromDomain).toList(),
-                        response.hasMore() ? response.nextToken() : null
+                        body.items().stream().map(LinkResponse::fromDomain).toList(),
+                        body.nextToken()
                 )
         );
     }

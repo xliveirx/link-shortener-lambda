@@ -1,5 +1,6 @@
 package joao.adapter.out.persistence.helper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -14,69 +15,84 @@ import static joao.adapter.out.persistence.DynamoAttributeConstants.LINK_USER_ID
 @Component
 public class LinkDynamoDbTokenHelper {
 
+    private static final String SEP = "|";
     private final ObjectMapper mapper;
 
     public LinkDynamoDbTokenHelper(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
-    public String encodeStartToken(Map<String, AttributeValue> key){
+    public String encodeStartToken(Map<String, AttributeValue> key) {
+        if (key == null || key.isEmpty()) return null;
+
+        String userId = getS(key.get(LINK_USER_ID));
+        String linkId = getS(key.get(LINK_ID));
+        if (userId == null || linkId == null) return null;
+
+        String raw = userId + SEP + linkId; // new simple format
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public Map<String, AttributeValue> decodeStartToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+
+        String raw = decodeBase64Lenient(token);
+
+        int sep = raw.indexOf(SEP);
+        if (sep > 0 && sep < raw.length() - 1) {
+            String userId = raw.substring(0, sep);
+            String linkId = raw.substring(sep + 1);
+            return Map.of(
+                    LINK_USER_ID, AttributeValue.fromS(userId),
+                    LINK_ID, AttributeValue.fromS(linkId)
+            );
+        }
+
+        String trimmed = raw.trim();
+        if (trimmed.startsWith("{")) {
+            try {
+                JsonNode n = mapper.readTree(trimmed);
+                String userId = textOrNull(n.get("userId"));
+                String linkId = textOrNull(n.get("linkId"));
+                if (isBlank(userId) || isBlank(linkId)) {
+                    throw new IllegalArgumentException("Token JSON missing userId/linkId");
+                }
+                return Map.of(
+                        LINK_USER_ID, AttributeValue.fromS(userId),
+                        LINK_ID, AttributeValue.fromS(linkId)
+                );
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid JSON token", e);
+            }
+        }
+
+        throw new IllegalArgumentException("Unrecognized token format");
+    }
+
+    private static String decodeBase64Lenient(String token) {
         try {
-            if (key == null || key.isEmpty() || !key.containsKey(LINK_ID) || !key.containsKey(LINK_USER_ID)) {
-                System.err.println("Invalid key for token encoding: " + key);
-                return null;
+            return new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e1) {
+            try {
+                return new String(Base64.getDecoder().decode(token), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e2) {
+                throw new IllegalArgumentException("Invalid Base64 token", e2);
             }
-
-            AttributeValue linkIdValue = key.get(LINK_ID);
-            AttributeValue userIdValue = key.get(LINK_USER_ID);
-
-            if (linkIdValue == null || userIdValue == null || 
-                linkIdValue.s() == null || userIdValue.s() == null ||
-                linkIdValue.s().isEmpty() || userIdValue.s().isEmpty()) {
-                System.err.println("Invalid values in key for token encoding: linkId=" + 
-                                  (linkIdValue != null ? linkIdValue.s() : "null") + 
-                                  ", userId=" + (userIdValue != null ? userIdValue.s() : "null"));
-                return null;
-            }
-
-            var dto = new TokenDto(linkIdValue.s(), userIdValue.s());
-            String json = mapper.writeValueAsString(dto);
-
-            String token = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-            System.out.println("Encoded token: " + token + " for linkId=" + linkIdValue.s() + ", userId=" + userIdValue.s());
-
-            return token;
-        } catch (Exception ex) {
-            System.err.println("Error encoding token: " + ex.getMessage());
-            throw new RuntimeException("Failed to encode start token", ex);
         }
     }
 
-    public Map<String, AttributeValue> decodeStartToken(String token){
-        try {
-            if (token == null || token.isEmpty()) {
-                throw new IllegalArgumentException("Token cannot be null or empty");
-            }
+    private static String getS(AttributeValue av) {
+        return (av != null && av.s() != null && !av.s().isEmpty()) ? av.s() : null;
+    }
 
-            byte[] decoded;
-            try {
-                decoded = Base64.getDecoder().decode(token);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid Base64 token format: " + e.getMessage(), e);
-            }
+    private static String textOrNull(JsonNode node) {
+        return (node == null || node.isNull()) ? null : node.asText(null);
+    }
 
-            String json = new String(decoded, StandardCharsets.UTF_8);
-
-            var dto = mapper.readValue(json, TokenDto.class);
-
-            return Map.of(
-                    LINK_USER_ID, AttributeValue.fromS(dto.userId()),
-                    LINK_ID, AttributeValue.fromS(dto.linkId())
-            );
-
-        } catch (Exception ex) {
-            System.err.println("Error decoding token: " + token + ", Error: " + ex.getMessage());
-            throw new RuntimeException("Failed to decode start token", ex);
-        }
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 }

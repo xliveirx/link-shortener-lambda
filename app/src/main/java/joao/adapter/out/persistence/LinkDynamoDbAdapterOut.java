@@ -18,9 +18,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.UUID;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static joao.adapter.out.persistence.DynamoAttributeConstants.LINK_ACTIVE;
 import static joao.adapter.out.persistence.DynamoAttributeConstants.LINK_CREATED_AT;
 import static joao.config.Constants.FK_TB_USERS_LINK_USER_INDEX;
@@ -61,7 +61,10 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
     }
 
     @Override
-    public PaginatedResult<Link> findAllByUserId(String userId, String nextToken, int limit, LinkFilter filters) {
+    public PaginatedResult<Link> findAllByUserId(String userId,
+                                                 String nextToken,
+                                                 int limit,
+                                                 LinkFilter filters) {
 
         QueryConditional qc = buildPartitionKeyUserId(userId);
 
@@ -70,76 +73,74 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
 
         buildFiltersParam(filters, conditions, expValues);
 
-        var query = buildDynamoRequest(
+        var queryReq = buildDynamoDbRequest(
                 nextToken, limit, qc, conditions, expValues
         );
 
-        Page<LinkEntity> page = executeQuery(query);
+        Page<LinkEntity> page = executeQuery(queryReq);
 
         return convertAndReturn(page);
-
     }
 
     private static QueryConditional buildPartitionKeyUserId(String userId) {
-        UUID userUUID = UUID.fromString(userId);
         return QueryConditional.keyEqualTo(
                 Key.builder()
-                        .partitionValue(userUUID.toString())
+                        .partitionValue(userId)
                         .build()
         );
     }
 
     private static void buildFiltersParam(LinkFilter filters, List<String> conditions, Map<String, AttributeValue> expValues) {
-        if(filters.active() != null) {
+        if (!isNull(filters.active())) {
             conditions.add(format("%s = :activeValue", LINK_ACTIVE));
             expValues.put(":activeValue", AttributeValue.fromBool(filters.active()));
         }
 
-        if(filters.startCreatedAt() != null && filters.endCreatedAt() != null) {
+        if (!isNull(filters.startCreatedAt()) && !isNull(filters.endCreatedAt())) {
             conditions.add(format("%s BETWEEN :startCreatedAt AND :endCreatedAt", LINK_CREATED_AT));
             expValues.put(":startCreatedAt", AttributeValue.fromS(LocalDateTime.of(filters.startCreatedAt(), LocalTime.MIN).toString()));
             expValues.put(":endCreatedAt", AttributeValue.fromS(LocalDateTime.of(filters.endCreatedAt(), LocalTime.MAX).toString()));
         }
     }
 
-    private QueryEnhancedRequest buildDynamoRequest(String nextToken, int limit, QueryConditional qc, List<String> conditions, Map<String, AttributeValue> expValues) {
+    private QueryEnhancedRequest buildDynamoDbRequest(String nextToken, int limit, QueryConditional qc,
+                                                      List<String> conditions, Map<String, AttributeValue> expValues) {
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(qc)
                 .limit(limit);
 
-        if (!conditions.isEmpty() ) {
+        if (!conditions.isEmpty()) {
             requestBuilder.filterExpression(Expression.builder()
                     .expression(String.join(" AND ", conditions))
                     .expressionValues(expValues)
                     .build());
         }
 
-        if(nextToken != null && !nextToken.isEmpty()) {
+        if (nextToken != null && !nextToken.isBlank()) {
             try {
-                var map = dynamoTokenHelper.decodeStartToken(nextToken);
-                if (map != null && !map.isEmpty()) {
-                    requestBuilder.exclusiveStartKey(map);
-                    System.out.println("Using pagination token: " + nextToken);
-                } else {
-                    System.err.println("Decoded token is null or empty: " + nextToken);
+                var startKey = dynamoTokenHelper.decodeStartToken(nextToken);
+                if (startKey != null && !startKey.isEmpty()) {
+                    requestBuilder.exclusiveStartKey(startKey);
                 }
             } catch (RuntimeException e) {
-                System.err.println("Error processing pagination token: " + e.getMessage());
+
             }
         }
+
         return requestBuilder.build();
     }
 
-    private Page<LinkEntity> executeQuery(QueryEnhancedRequest query) {
+
+    private Page<LinkEntity> executeQuery(QueryEnhancedRequest queryReq) {
         return dynamoDbTemplate
-                .query(query, LinkEntity.class, FK_TB_USERS_LINK_USER_INDEX)
+                .query(queryReq, LinkEntity.class, FK_TB_USERS_LINK_USER_INDEX)
                 .stream()
                 .findFirst()
                 .orElse(null);
     }
 
     private PaginatedResult<Link> convertAndReturn(Page<LinkEntity> page) {
-        if(page == null) {
+        if (page == null) {
             return new PaginatedResult<>(Collections.emptyList(), null, false);
         }
 
@@ -148,23 +149,22 @@ public class LinkDynamoDbAdapterOut implements LinkRepositoryPortOut {
                 .map(LinkEntity::toDomain)
                 .collect(Collectors.toList());
 
-
-        boolean hasMoreItems = page.lastEvaluatedKey() != null && !links.isEmpty();
-
+        Map<String, AttributeValue> lastKey = page.lastEvaluatedKey();
         String nextToken = null;
+        boolean hasMoreItems = lastKey != null && !lastKey.isEmpty() && !links.isEmpty();
+
         if (hasMoreItems) {
-            nextToken = dynamoTokenHelper.encodeStartToken(page.lastEvaluatedKey());
-            if (nextToken == null) {
+            try {
+                nextToken = dynamoTokenHelper.encodeStartToken(lastKey);
+                if (nextToken == null || nextToken.isBlank()) {
+                    hasMoreItems = false;
+                }
+            } catch (RuntimeException e) {
                 hasMoreItems = false;
-                System.err.println("Token encoding failed, setting hasMoreItems to false");
             }
         }
 
-        return new PaginatedResult<>(
-                links,
-                nextToken,
-                hasMoreItems
-        );
+        return new PaginatedResult<>(links, nextToken, hasMoreItems);
     }
 
 }
